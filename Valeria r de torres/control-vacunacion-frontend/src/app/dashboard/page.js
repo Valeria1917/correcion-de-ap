@@ -1,10 +1,11 @@
 "use client";
 
 import React from 'react';
-import Dashboard from '@/components/Dashboard';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CircularProgress, Box } from '@mui/material';
+import Dashboard from '@/components/Dashboard';
+import Navbar from '@/components/navbar/navbar';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -12,13 +13,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Comprobar si el usuario está autenticado
     const token = localStorage.getItem('userToken');
     const userData = localStorage.getItem('userData');
     
     if (!token || !userData) {
-      // Si no hay token o datos de usuario, redirigir al inicio
-      router.push('/');
+      router.push('/');  // Si no hay token, redirige al inicio
     } else {
       setIsAuthenticated(true);
     }
@@ -33,5 +32,12 @@ export default function DashboardPage() {
     );
   }
 
-  return isAuthenticated ? <Dashboard /> : null;
+  return (
+    isAuthenticated ? (
+      <>
+        <Navbar /> {/* Aquí se agrega el Navbar */}
+        <Dashboard />
+      </>
+    ) : null
+  );
 }
