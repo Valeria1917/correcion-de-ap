@@ -82,7 +82,7 @@ export default function Dashboard() {
         setMascotas(mascotasResponse.data);
 
         // Fetch todas las citas del usuario
-        const citasResponse = await axios.get(`${API_URL}/citas/${userData.Nombre}`);
+        const citasResponse = await axios.get(`${API_URL}/cita/dueno/${userData.Nombre}`);
         console.log("Citas:", citasResponse.data);
         setCitas(citasResponse.data);
 

@@ -71,6 +71,23 @@ const controller = {
     }
   },
 
+  getByNombreDueno: async (req, res) => {
+    try {
+      const { nombreDueno } = req.params;
+  
+      if (!nombreDueno) {
+        return res.status(400).json({ error: "Nombre del dueño es obligatorio." });
+      }
+  
+      const citas = await Cita.find({ NombreDueno: { $regex: new RegExp(nombreDueno, 'i') } });
+  
+      return res.status(200).json(citas);
+    } catch (error) {
+      return res.status(500).json({ error: "Error al obtener citas por nombre del dueño.", details: error.message });
+    }
+  },
+
+
   delete: async (req, res) => {
     try {
       const citaEliminada = await Cita.findByIdAndDelete(req.params._id);
