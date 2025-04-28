@@ -57,13 +57,14 @@ function Navbar() {
     setAnchorElUser(null);
   };
 
-  // Función para cerrar menú y bloquear acceso
   const handleCloseAndLockMenu = () => {
+    router.push('/'); // Redirige al inicio antes de cerrar el menú
     setAnchorElUser(null);
     setIsMenuUnlocked(false);
     setShowLoginButton(true);
     localStorage.removeItem('menuUnlocked');
-  };
+};
+
 
   const handleLogout = () => {
     setAnchorElUser(null);
@@ -82,10 +83,8 @@ function Navbar() {
     setUserData(data.user);
     setShowLoginButton(false);
     // También podríamos desbloquear el menú si el usuario es un administrador
-    if (data.user?.role === 'admin') {
-      setIsMenuUnlocked(true);
-      localStorage.setItem('menuUnlocked', 'true');
-    }
+      // Redirigir a la página de mascotas, citas y vacunas
+      router.push('/dashboard'); // Cambia esto por la ruta adecuada que tenga esa sección.
   };
 
   const openProtectedMenu = (event) => {
