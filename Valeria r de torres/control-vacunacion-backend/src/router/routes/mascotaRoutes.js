@@ -9,5 +9,6 @@ router.get('/:_id', controller.getById);
 router.put('/:_id', controller.update);
 router.delete('/:_id', controller.delete);
 router.put('/:id/vacunas', controller.addVacuna);
+router.get("/:mascotaId/vacunas", controller.getVacunasByMascotaId); // ruta específica primero
 
 module.exports = router;

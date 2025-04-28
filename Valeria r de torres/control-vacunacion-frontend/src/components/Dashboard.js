@@ -315,7 +315,7 @@ export default function Dashboard() {
                       </Typography>
                       
                       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        <strong>Peso:</strong> {mascota.peso ? `${mascota.peso} kg` : 'No especificado'}
+                        <strong>Estado de Salud:</strong> {mascota.estadoSalud ? `${mascota.estadoSalud}` : 'No especificado'}
                       </Typography>
                       
                       {mascota.observaciones && (

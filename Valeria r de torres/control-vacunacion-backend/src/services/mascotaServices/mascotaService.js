@@ -46,6 +46,22 @@ const controller = {
     }
   },
 
+  getVacunasByMascotaId: async (req, res) => {
+    try {
+      const { mascotaId } = req.params;
+
+      const mascota = await Mascota.findById(mascotaId);
+
+      if (!mascota) {
+        return res.status(404).json({ error: "Mascota no encontrada." });
+      }
+
+      return res.status(200).json(mascota.vacunas || []);
+    } catch (error) {
+      return res.status(500).json({ error: "Error al obtener vacunas.", details: error.message });
+    }
+  },
+
   getById: async (req, res) => {
     try {
       const mascota = await Mascota.findById(req.params._id);
