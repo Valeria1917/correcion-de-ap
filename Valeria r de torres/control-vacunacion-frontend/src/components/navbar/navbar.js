@@ -9,7 +9,7 @@ import ModalDueño from '@/components/modals/ModalDueno';
 import ModalMascota from '@/components/modals/ModalMascota';
 import ModalCita from '@/components/modals/ModalCita';
 import ModalVacuna from '@/components/modals/ModalVacuna';
-import ModalLogin from '@/components/modals/ModalLogin'; // Importamos el componente
+import ModalLogin from '@/components/modals/ModalLogin';
 
 function Navbar() {
   const router = useRouter();
@@ -29,26 +29,30 @@ function Navbar() {
   const [openLoginModal, setOpenLoginModal] = React.useState(false);
 
   React.useEffect(() => {
-    // Verificamos si el menú está desbloqueado
-    const unlocked = localStorage.getItem('menuUnlocked') === 'true';
-    setIsMenuUnlocked(unlocked);
-    
-    // Si el menú está desbloqueado, también ocultamos el botón de login
-    if (unlocked) {
-      setShowLoginButton(false);
-    }
-    
-    // Verificamos si el usuario está logueado
+    // Verificamos si el usuario está logueado primero
     const token = localStorage.getItem('userToken');
     const storedUserData = localStorage.getItem('userData');
     
     if (token && storedUserData) {
       setIsLoggedIn(true);
       setShowLoginButton(false);
+      // Si el usuario está logueado, no necesitamos desbloquear el menú
+      setIsMenuUnlocked(false);
+      localStorage.removeItem('menuUnlocked');
+      
       try {
         setUserData(JSON.parse(storedUserData));
       } catch (e) {
         console.error("Error parsing user data:", e);
+      }
+    } else {
+      // Solo verificamos si el menú está desbloqueado si NO está logueado
+      const unlocked = localStorage.getItem('menuUnlocked') === 'true';
+      setIsMenuUnlocked(unlocked);
+      
+      // Si el menú está desbloqueado, también ocultamos el botón de login
+      if (unlocked) {
+        setShowLoginButton(false);
       }
     }
   }, []);
@@ -63,8 +67,7 @@ function Navbar() {
     setIsMenuUnlocked(false);
     setShowLoginButton(true);
     localStorage.removeItem('menuUnlocked');
-};
-
+  };
 
   const handleLogout = () => {
     setAnchorElUser(null);
@@ -82,12 +85,19 @@ function Navbar() {
     setIsLoggedIn(true);
     setUserData(data.user);
     setShowLoginButton(false);
-    // También podríamos desbloquear el menú si el usuario es un administrador
-      // Redirigir a la página de mascotas, citas y vacunas
-      router.push('/dashboard'); // Cambia esto por la ruta adecuada que tenga esa sección.
+    // Al iniciar sesión, también bloqueamos el menú desplegable
+    setIsMenuUnlocked(false);
+    localStorage.removeItem('menuUnlocked');
+    // Redirigir a la página de dashboard
+    router.push('/dashboard');
   };
 
   const openProtectedMenu = (event) => {
+    // Si el usuario está logueado, no permitir abrir el menú desplegable
+    if (isLoggedIn) {
+      return;
+    }
+    
     if (isMenuUnlocked) {
       setAnchorElUser(event.currentTarget);
     } else {
@@ -240,37 +250,40 @@ function Navbar() {
                 </Button>
               )}
 
-              <Tooltip title="Opciones rápidas (protegido)">
-                <IconButton onClick={openProtectedMenu}>
-                  <Badge 
-                    color="secondary" 
-                    variant="dot" 
-                    invisible={!isMenuUnlocked}
-                  >
-                    <Avatar sx={{
-                      bgcolor: '#ba68c8',
-                      width: 48,
-                      height: 48,
-                      fontSize: 28,
-                      boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
-                      transition: 'all 0.3s',
-                      '&:hover': {
-                        transform: 'scale(1.1)',
-                        boxShadow: '0 5px 12px rgba(0,0,0,0.3)',
-                      }
-                    }}>
-                      🐾
-                    </Avatar>
-                  </Badge>
-                </IconButton>
-              </Tooltip>
+              {/* Icono de menú desplegable - solo visible cuando NO está logueado */}
+              {!isLoggedIn && (
+                <Tooltip title="Opciones rápidas (protegido)">
+                  <IconButton onClick={openProtectedMenu}>
+                    <Badge 
+                      color="secondary" 
+                      variant="dot" 
+                      invisible={!isMenuUnlocked}
+                    >
+                      <Avatar sx={{
+                        bgcolor: '#ba68c8',
+                        width: 48,
+                        height: 48,
+                        fontSize: 28,
+                        boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
+                        transition: 'all 0.3s',
+                        '&:hover': {
+                          transform: 'scale(1.1)',
+                          boxShadow: '0 5px 12px rgba(0,0,0,0.3)',
+                        }
+                      }}>
+                        🐾
+                      </Avatar>
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+              )}
             </Box>
 
-            {/* Menú desplegable protegido */}
+            {/* Menú desplegable protegido - solo disponible cuando NO está logueado */}
             <Menu
               sx={{ mt: '45px' }}
               anchorEl={anchorElUser}
-              open={Boolean(anchorElUser)}
+              open={Boolean(anchorElUser) && !isLoggedIn}
               onClose={handleCloseUserMenu}
               anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
               transformOrigin={{ vertical: 'top', horizontal: 'right' }}
@@ -294,7 +307,6 @@ function Navbar() {
               )}
               <MenuItem onClick={() => setOpenCitaModal(true)}>🗓️ Agendar Cita</MenuItem>
               <MenuItem onClick={() => setOpenVacunaModal(true)}>💉 Registrar Vacuna</MenuItem>
-              {/* Cambiado para que cierre y bloquee el menú */}
               <MenuItem onClick={handleCloseAndLockMenu}>🔒 Cerrar y bloquear menú</MenuItem>
             </Menu>
           </Toolbar>
