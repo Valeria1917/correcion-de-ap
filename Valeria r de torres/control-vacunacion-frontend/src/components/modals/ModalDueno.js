@@ -3,6 +3,8 @@ import {
     Modal, Box, Typography, TextField, Button, Alert, CircularProgress
 } from "@mui/material";
 import axios from "axios";
+import sha256 from "crypto-js/sha256"; // 👈 Importa SHA256
+import encHex from "crypto-js/enc-hex"; // 👈 Para codificar en Hexadecimal
 
 const style = {
     position: 'absolute',
@@ -20,7 +22,7 @@ const style = {
 };
 
 export default function ModalDueño({ open, onClose, onSave }) {
-    const [form, setForm] = useState({ Nombre: "", Email: "", direccion: "" });
+    const [form, setForm] = useState({ Nombre: "", Email: "", direccion: "", contrasenna: "" });
     const [errors, setErrors] = useState({});
     const [isLoading, setIsLoading] = useState(false);
     const [successMessage, setSuccessMessage] = useState("");
@@ -35,7 +37,8 @@ export default function ModalDueño({ open, onClose, onSave }) {
                 setForm({
                     Nombre: onSave.Nombre || "",
                     Email: onSave.Email || "",
-                    direccion: onSave.direccion || ""
+                    direccion: onSave.direccion || "",
+                    contrasenna: "" // Nunca precargar contraseña
                 });
                 setEditMode(true);
                 setCurrentId(onSave._id);
@@ -54,8 +57,8 @@ export default function ModalDueño({ open, onClose, onSave }) {
         }
     };
 
-    const resetForm = () => {
-        setForm({ Nombre: "", Email: "", direccion: "" });
+    const resetForm = () => {   
+        setForm({ Nombre: "", Email: "", direccion: "", contrasenna: "" });
         setErrors({});
         setEditMode(false);
         setCurrentId(null);
@@ -71,6 +74,7 @@ export default function ModalDueño({ open, onClose, onSave }) {
             newErrors.Email = "⚠️ Email no válido";
         }
         if (!form.direccion.trim()) newErrors.direccion = "📍 ¡Dirección es requerida!";
+        if (!editMode && !form.contrasenna.trim()) newErrors.contrasenna = "🔒 ¡Contraseña es requerida!";
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -91,7 +95,6 @@ export default function ModalDueño({ open, onClose, onSave }) {
         setSuccessMessage("");
 
         try {
-            // 🚨 Validar duplicados por Nombre o Email
             const duplicate = owners.find(owner =>
                 (owner.Nombre.trim().toLowerCase() === form.Nombre.trim().toLowerCase() ||
                  owner.Email.trim().toLowerCase() === form.Email.trim().toLowerCase()) &&
@@ -104,7 +107,12 @@ export default function ModalDueño({ open, onClose, onSave }) {
                 return;
             }
 
-            const payload = { ...form, Email: form.Email.trim() };
+            // Hashear la contraseña solo si es nuevo o cambió
+            const payload = {
+                ...form,
+                Email: form.Email.trim(),
+                ...(form.contrasenna && { contrasenna: form.contrasenna})
+            };
 
             let response;
             if (editMode) {
@@ -160,10 +168,9 @@ export default function ModalDueño({ open, onClose, onSave }) {
                         color: '#00796b'
                     }}
                 >
-                    {editMode ? "✏️ Editar Dueño" : "🆕 Agregar Nuevo Dueño"}
+                    {editMode ? "✏️ Editar Dueño" : "🆕 Registrarse"}
                 </Typography>
 
-                {/* Mensajes de éxito o error */}
                 {successMessage && (
                     <Alert severity="success" sx={{ mb: 3 }}>{successMessage}</Alert>
                 )}
@@ -171,7 +178,6 @@ export default function ModalDueño({ open, onClose, onSave }) {
                     <Alert severity="error" sx={{ mb: 3 }}>{errors.submit}</Alert>
                 )}
 
-                {/* Formulario de datos */}
                 <Box component="form" onSubmit={handleSubmit} noValidate>
                     <TextField
                         fullWidth
@@ -209,6 +215,22 @@ export default function ModalDueño({ open, onClose, onSave }) {
                         helperText={errors.direccion}
                         disabled={isLoading}
                     />
+
+                    {/* Solo en modo agregar o cambio manual */}
+                    {!editMode && (
+                        <TextField
+                            fullWidth
+                            margin="normal"
+                            label="🔒 Contraseña"
+                            name="contrasenna"
+                            type="password"
+                            value={form.contrasenna}
+                            onChange={handleChange}
+                            error={!!errors.contrasenna}
+                            helperText={errors.contrasenna}
+                            disabled={isLoading}
+                        />
+                    )}
 
                     <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3, gap: 2 }}>
                         <Button

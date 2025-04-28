@@ -3,12 +3,13 @@ import * as React from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   AppBar, Toolbar, Typography, Container, Box, Button,
-  Menu, MenuItem, IconButton, Tooltip, Avatar
+  Menu, MenuItem, IconButton, Tooltip, Avatar, Badge
 } from '@mui/material';
 import ModalDueño from '@/components/modals/ModalDueno';
 import ModalMascota from '@/components/modals/ModalMascota';
 import ModalCita from '@/components/modals/ModalCita';
 import ModalVacuna from '@/components/modals/ModalVacuna';
+import ModalLogin from '@/components/modals/ModalLogin'; // Importamos el componente
 
 function Navbar() {
   const router = useRouter();
@@ -17,26 +18,74 @@ function Navbar() {
 
   const [anchorElUser, setAnchorElUser] = React.useState(null);
   const [isMenuUnlocked, setIsMenuUnlocked] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [userData, setUserData] = React.useState(null);
+  const [showLoginButton, setShowLoginButton] = React.useState(true);
 
   const [openDuenoModal, setOpenDuenoModal] = React.useState(false);
   const [openMascotaModal, setOpenMascotaModal] = React.useState(false);
   const [openCitaModal, setOpenCitaModal] = React.useState(false);
   const [openVacunaModal, setOpenVacunaModal] = React.useState(false);
+  const [openLoginModal, setOpenLoginModal] = React.useState(false);
 
   React.useEffect(() => {
+    // Verificamos si el menú está desbloqueado
     const unlocked = localStorage.getItem('menuUnlocked') === 'true';
     setIsMenuUnlocked(unlocked);
+    
+    // Si el menú está desbloqueado, también ocultamos el botón de login
+    if (unlocked) {
+      setShowLoginButton(false);
+    }
+    
+    // Verificamos si el usuario está logueado
+    const token = localStorage.getItem('userToken');
+    const storedUserData = localStorage.getItem('userData');
+    
+    if (token && storedUserData) {
+      setIsLoggedIn(true);
+      setShowLoginButton(false);
+      try {
+        setUserData(JSON.parse(storedUserData));
+      } catch (e) {
+        console.error("Error parsing user data:", e);
+      }
+    }
   }, []);
 
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
 
+  // Función para cerrar menú y bloquear acceso
+  const handleCloseAndLockMenu = () => {
+    setAnchorElUser(null);
+    setIsMenuUnlocked(false);
+    setShowLoginButton(true);
+    localStorage.removeItem('menuUnlocked');
+  };
+
   const handleLogout = () => {
     setAnchorElUser(null);
     setIsMenuUnlocked(false);
+    setIsLoggedIn(false);
+    setUserData(null);
+    setShowLoginButton(true);
     localStorage.removeItem('menuUnlocked');
+    localStorage.removeItem('userToken');
+    localStorage.removeItem('userData');
     router.push('/');
+  };
+
+  const handleLoginSuccess = (data) => {
+    setIsLoggedIn(true);
+    setUserData(data.user);
+    setShowLoginButton(false);
+    // También podríamos desbloquear el menú si el usuario es un administrador
+    if (data.user?.role === 'admin') {
+      setIsMenuUnlocked(true);
+      localStorage.setItem('menuUnlocked', 'true');
+    }
   };
 
   const openProtectedMenu = (event) => {
@@ -46,6 +95,7 @@ function Navbar() {
       const password = prompt("🔒 Ingresa la contraseña para acceder al menú:");
       if (password === "1234") {
         setIsMenuUnlocked(true);
+        setShowLoginButton(false); // Ocultar botón de login cuando se desbloquea el menú
         localStorage.setItem('menuUnlocked', 'true');
         setAnchorElUser(event.currentTarget);
       } else {
@@ -103,7 +153,72 @@ function Navbar() {
 
             {/* Acciones de la barra */}
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {isMenuUnlocked && (
+              {/* Botón de Registrarse en la barra de navegación (visible cuando NO están autenticados) */}
+              {!isMenuUnlocked && !isLoggedIn && (
+                <Button
+                  onClick={() => setOpenDuenoModal(true)}
+                  sx={{
+                    color: "#fff",
+                    backgroundColor: '#9c27b0',
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    borderRadius: '25px',
+                    px: 3,
+                    py: 1,
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                    '&:hover': {
+                      backgroundColor: '#7b1fa2',
+                      transform: 'scale(1.05)',
+                      transition: 'all 0.2s',
+                    }
+                  }}
+                >
+                  👨‍👩‍👧 Registrarse
+                </Button>
+              )}
+              
+              {/* Botón de Iniciar Sesión (visible solo cuando no está logueado Y showLoginButton es true) */}
+              {!isLoggedIn && showLoginButton && (
+                <Button
+                  onClick={() => setOpenLoginModal(true)}
+                  sx={{
+                    color: "#fff",
+                    backgroundColor: '#673ab7',
+                    fontWeight: 'bold',
+                    textTransform: 'none',
+                    borderRadius: '25px',
+                    px: 3,
+                    py: 1,
+                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)',
+                    '&:hover': {
+                      backgroundColor: '#512da8',
+                      transform: 'scale(1.05)',
+                      transition: 'all 0.2s',
+                    }
+                  }}
+                >
+                  🔑 Iniciar Sesión
+                </Button>
+              )}
+              
+              {/* Mostrar el nombre del usuario si está logueado */}
+              {isLoggedIn && userData && (
+                <Typography
+                  sx={{
+                    color: '#fff',
+                    fontWeight: 'bold',
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    borderRadius: '25px',
+                    px: 2,
+                    py: 1,
+                  }}
+                >
+                  👤 Hola, {userData.Nombre || 'Usuario'}
+                </Typography>
+              )}
+              
+              {/* Botón de Cerrar Sesión (visible solo cuando está logueado) */}
+              {isLoggedIn && (
                 <Button
                   onClick={handleLogout}
                   sx={{
@@ -122,26 +237,32 @@ function Navbar() {
                     }
                   }}
                 >
-                  ❌ Cerrar sesión
+                  ❌ Cerrar Sesión
                 </Button>
               )}
 
               <Tooltip title="Opciones rápidas (protegido)">
                 <IconButton onClick={openProtectedMenu}>
-                  <Avatar sx={{
-                    bgcolor: '#ba68c8',
-                    width: 48,
-                    height: 48,
-                    fontSize: 28,
-                    boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
-                    transition: 'all 0.3s',
-                    '&:hover': {
-                      transform: 'scale(1.1)',
-                      boxShadow: '0 5px 12px rgba(0,0,0,0.3)',
-                    }
-                  }}>
-                    🐾
-                  </Avatar>
+                  <Badge 
+                    color="secondary" 
+                    variant="dot" 
+                    invisible={!isMenuUnlocked}
+                  >
+                    <Avatar sx={{
+                      bgcolor: '#ba68c8',
+                      width: 48,
+                      height: 48,
+                      fontSize: 28,
+                      boxShadow: '0 3px 8px rgba(0,0,0,0.2)',
+                      transition: 'all 0.3s',
+                      '&:hover': {
+                        transform: 'scale(1.1)',
+                        boxShadow: '0 5px 12px rgba(0,0,0,0.3)',
+                      }
+                    }}>
+                      🐾
+                    </Avatar>
+                  </Badge>
                 </IconButton>
               </Tooltip>
             </Box>
@@ -172,10 +293,10 @@ function Navbar() {
                   🐾 Registrar Mascota
                 </MenuItem>
               )}
-              <MenuItem onClick={() => setOpenDuenoModal(true)}>👨‍👩‍👧 Agregar Dueño</MenuItem>
               <MenuItem onClick={() => setOpenCitaModal(true)}>🗓️ Agendar Cita</MenuItem>
               <MenuItem onClick={() => setOpenVacunaModal(true)}>💉 Registrar Vacuna</MenuItem>
-              <MenuItem onClick={handleCloseUserMenu}>❌ Cerrar menú</MenuItem>
+              {/* Cambiado para que cierre y bloquee el menú */}
+              <MenuItem onClick={handleCloseAndLockMenu}>🔒 Cerrar y bloquear menú</MenuItem>
             </Menu>
           </Toolbar>
         </Container>
@@ -186,6 +307,12 @@ function Navbar() {
       <ModalMascota open={openMascotaModal} onClose={() => setOpenMascotaModal(false)} />
       <ModalCita open={openCitaModal} onClose={() => setOpenCitaModal(false)} />
       <ModalVacuna open={openVacunaModal} onClose={() => setOpenVacunaModal(false)} />
+      <ModalLogin 
+        open={openLoginModal} 
+        onClose={() => setOpenLoginModal(false)} 
+        onLoginSuccess={handleLoginSuccess}
+        setShowLoginButton={setShowLoginButton}
+      />
     </>
   );
 }

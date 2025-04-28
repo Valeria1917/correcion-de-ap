@@ -3,6 +3,7 @@ Dueño = {
     Nombre: String,
     Email: String,
     direccion: String,
+    contrasenna: String
 }
 
 Mascotas = [
